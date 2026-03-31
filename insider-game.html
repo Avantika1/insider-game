@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Insider</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c27;
+    --surface3: #252535;
+    --accent: #e8ff47;
+    --accent2: #ff3d6b;
+    --accent3: #47b8ff;
+    --text: #f0f0f5;
+    --muted: #7070a0;
+    --border: #2a2a40;
+    --master: #ffd166;
+    --insider: #ff3d6b;
+    --common: #47b8ff;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: hidden;
+  }
+
+  /* ---- NOISE TEXTURE OVERLAY ---- */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 999;
+    opacity: 0.6;
+  }
+
+  .screen {
+    display: none;
+    width: 100%;
+    max-width: 480px;
+    min-height: 100vh;
+    padding: 24px 20px 40px;
+    flex-direction: column;
+    animation: fadeUp 0.4s ease;
+  }
+  .screen.active { display: flex; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ---- TYPOGRAPHY ---- */
+  .game-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 72px;
+    letter-spacing: 8px;
+    color: var(--accent);
+    line-height: 1;
+    text-shadow: 0 0 40px rgba(232,255,71,0.3);
+  }
+  h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    letter-spacing: 3px;
+    color: var(--text);
+  }
+  h3 {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  p { color: var(--muted); font-size: 15px; line-height: 1.6; }
+
+  /* ---- BUTTONS ---- */
+  .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 16px 24px;
+    border: none;
+    border-radius: 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    letter-spacing: 0.3px;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #0a0a0f;
+  }
+  .btn-primary:hover { background: #f5ff70; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(232,255,71,0.25); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { background: var(--surface3); border-color: var(--muted); }
+  .btn-danger {
+    background: rgba(255,61,107,0.15);
+    color: var(--accent2);
+    border: 1px solid rgba(255,61,107,0.3);
+  }
+  .btn-danger:hover { background: rgba(255,61,107,0.25); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
+  .btn-sm {
+    width: auto;
+    padding: 8px 16px;
+    font-size: 13px;
+    border-radius: 8px;
+  }
+
+  /* ---- INPUTS ---- */
+  .input-field {
+    width: 100%;
+    padding: 14px 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .input-field:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(232,255,71,0.1); }
+  .input-field::placeholder { color: var(--muted); }
+
+  /* ---- CARDS ---- */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+  }
+
+  /* ---- PLAYER CHIPS ---- */
+  .player-list { display: flex; flex-direction: column; gap: 8px; }
+  .player-chip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 500;
+    animation: fadeUp 0.3s ease;
+  }
+  .player-chip .remove-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: color 0.15s;
+  }
+  .player-chip .remove-btn:hover { color: var(--accent2); }
+
+  /* ---- DIVIDER ---- */
+  .divider { height: 1px; background: var(--border); margin: 4px 0; }
+
+  /* ---- TIMER ---- */
+  .timer-ring-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+  }
+  .timer-ring-wrap svg { transform: rotate(-90deg); }
+  .timer-text {
+    position: absolute;
+    text-align: center;
+    pointer-events: none;
+  }
+  .timer-digits {
+    font-family: 'DM Mono', monospace;
+    font-size: 48px;
+    font-weight: 500;
+    letter-spacing: -2px;
+    color: var(--text);
+    line-height: 1;
+  }
+  .timer-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* ---- ROLE CARD ---- */
+  .role-card {
+    border-radius: 20px;
+    padding: 36px 28px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .role-card.master {
+    background: linear-gradient(135deg, #2a200a 0%, #1a1400 100%);
+    border: 1px solid rgba(255,209,102,0.3);
+  }
+  .role-card.insider {
+    background: linear-gradient(135deg, #2a0a14 0%, #1a0009 100%);
+    border: 1px solid rgba(255,61,107,0.3);
+  }
+  .role-card.common {
+    background: linear-gradient(135deg, #0a1a2a 0%, #000f1a 100%);
+    border: 1px solid rgba(71,184,255,0.3);
+  }
+  .role-icon {
+    font-size: 52px;
+    margin-bottom: 12px;
+    display: block;
+  }
+  .role-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 42px;
+    letter-spacing: 4px;
+  }
+  .role-card.master .role-name { color: var(--master); }
+  .role-card.insider .role-name { color: var(--accent2); }
+  .role-card.common .role-name { color: var(--common); }
+  .role-desc {
+    font-size: 14px;
+    line-height: 1.5;
+    margin-top: 10px;
+    opacity: 0.7;
+  }
+
+  /* ---- SECRET WORD ---- */
+  .secret-word-box {
+    background: var(--surface2);
+    border: 2px dashed var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    text-align: center;
+  }
+  .secret-word {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 52px;
+    letter-spacing: 6px;
+    color: var(--accent);
+    text-shadow: 0 0 30px rgba(232,255,71,0.4);
+    word-break: break-all;
+  }
+
+  /* ---- YES/NO ANSWER BUTTONS ---- */
+  .answer-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+  }
+  .answer-btn {
+    padding: 18px 8px;
+    border: none;
+    border-radius: 14px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .answer-btn.yes { background: rgba(71,255,130,0.15); color: #47ff82; border: 1px solid rgba(71,255,130,0.25); }
+  .answer-btn.no  { background: rgba(255,61,107,0.15); color: var(--accent2); border: 1px solid rgba(255,61,107,0.25); }
+  .answer-btn.dontknow { background: rgba(113,113,160,0.15); color: var(--muted); border: 1px solid var(--border); font-size: 14px; letter-spacing: 1px; }
+  .answer-btn:hover { transform: translateY(-2px); filter: brightness(1.2); }
+  .answer-btn:active { transform: translateY(0); }
+
+  /* ---- Q LOG ---- */
+  .q-log { max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+  .q-log::-webkit-scrollbar { width: 4px; }
+  .q-log::-webkit-scrollbar-track { background: transparent; }
+  .q-log::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  .q-entry {
+    display: flex;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--surface2);
+    border-radius: 8px;
+    font-size: 13px;
+    align-items: flex-start;
+    animation: fadeUp 0.2s ease;
+  }
+  .q-entry .asker { font-weight: 600; color: var(--accent3); white-space: nowrap; }
+  .q-entry .q-text { color: var(--muted); flex: 1; }
+  .q-entry .answer {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  .answer.yes { background: rgba(71,255,130,0.15); color: #47ff82; }
+  .answer.no  { background: rgba(255,61,107,0.15); color: var(--accent2); }
+  .answer.idk { background: var(--surface3); color: var(--muted); }
+
+  /* ---- VOTE UI ---- */
+  .vote-list { display: flex; flex-direction: column; gap: 8px; }
+  .vote-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 15px;
+    font-weight: 500;
+  }
+  .vote-item:hover { border-color: var(--muted); background: var(--surface3); }
+  .vote-item.selected { border-color: var(--accent); background: rgba(232,255,71,0.05); }
+  .vote-item .vote-dot {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+    transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .vote-item.selected .vote-dot {
+    border-color: var(--accent);
+    background: var(--accent);
+  }
+  .vote-item.selected .vote-dot::after {
+    content: '';
+    width: 8px; height: 8px;
+    background: #0a0a0f;
+    border-radius: 50%;
+  }
+  .vote-count-badge {
+    margin-left: auto;
+    background: var(--surface3);
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+    color: var(--muted);
+  }
+
+  /* ---- RESULT ---- */
+  .result-banner {
+    border-radius: 20px;
+    padding: 32px;
+    text-align: center;
+  }
+  .result-banner.win {
+    background: linear-gradient(135deg, #0a2a0a, #001a00);
+    border: 1px solid rgba(71,255,130,0.3);
+  }
+  .result-banner.lose {
+    background: linear-gradient(135deg, #2a0a0a, #1a0000);
+    border: 1px solid rgba(255,61,107,0.3);
+  }
+  .result-banner.insider-win {
+    background: linear-gradient(135deg, #1a0a2a, #0f0018);
+    border: 1px solid rgba(232,71,255,0.3);
+  }
+  .result-emoji { font-size: 56px; margin-bottom: 12px; display: block; }
+  .result-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 40px;
+    letter-spacing: 3px;
+    margin-bottom: 8px;
+  }
+  .result-banner.win .result-title { color: #47ff82; }
+  .result-banner.lose .result-title { color: var(--accent2); }
+  .result-banner.insider-win .result-title { color: #e847ff; }
+
+  /* ---- PASS SCREEN ---- */
+  .pass-screen-inner {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    text-align: center;
+  }
+  .pass-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 48px;
+    letter-spacing: 4px;
+    color: var(--accent);
+  }
+
+  /* ---- PROGRESS DOTS ---- */
+  .progress-dots {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    margin-bottom: 4px;
+  }
+  .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--border);
+    transition: background 0.2s;
+  }
+  .dot.active { background: var(--accent); }
+  .dot.done { background: var(--muted); }
+
+  /* ---- HEADER ---- */
+  .screen-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .back-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-size: 18px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .back-btn:hover { background: var(--surface3); }
+
+  /* ---- UTIL ---- */
+  .gap4 { gap: 4px; }
+  .gap8 { gap: 8px; }
+  .gap12 { gap: 12px; }
+  .gap16 { gap: 16px; }
+  .gap20 { gap: 20px; }
+  .gap24 { gap: 24px; }
+  .flex { display: flex; }
+  .flex-col { flex-direction: column; }
+  .flex-1 { flex: 1; }
+  .mt4 { margin-top: 4px; }
+  .mt8 { margin-top: 8px; }
+  .mt12 { margin-top: 12px; }
+  .mt16 { margin-top: 16px; }
+  .mt20 { margin-top: 20px; }
+  .mt24 { margin-top: 24px; }
+  .mt32 { margin-top: 32px; }
+  .center { text-align: center; }
+  .w100 { width: 100%; }
+  .pulse {
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+  .tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .tag-accent { background: rgba(232,255,71,0.15); color: var(--accent); }
+  .tag-danger { background: rgba(255,61,107,0.15); color: var(--accent2); }
+  .tag-info   { background: rgba(71,184,255,0.15); color: var(--common); }
+  .tag-warn   { background: rgba(255,209,102,0.15); color: var(--master); }
+
+  .reveal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10,10,15,0.95);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 20px;
+    padding: 24px;
+    animation: fadeUp 0.3s ease;
+  }
+  .reveal-overlay.hidden { display: none; }
+
+  .phase-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    width: fit-content;
+  }
+  .phase-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  .phase-dot.red { background: var(--accent2); }
+  .phase-dot.blue { background: var(--common); }
+
+  /* Timer warning flash */
+  @keyframes warnFlash {
+    0%, 100% { color: var(--text); }
+    50% { color: var(--accent2); }
+  }
+  .timer-warn .timer-digits {
+    animation: warnFlash 0.8s ease-in-out infinite;
+  }
+
+  .info-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+  }
+  .info-box p { font-size: 13px; }
+
+  .select-field {
+    width: 100%;
+    padding: 14px 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    outline: none;
+    appearance: none;
+    cursor: pointer;
+  }
+  .select-field:focus { border-color: var(--accent); }
+  .select-field option { background: var(--surface2); }
+
+  .word-input-wrap { position: relative; }
+  .word-input-wrap .input-field { padding-right: 90px; }
+  .word-input-wrap .random-btn {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .word-input-wrap .random-btn:hover { color: var(--text); border-color: var(--muted); }
+
+  .q-input-row { display: flex; gap: 8px; align-items: flex-start; }
+  .q-input-row .input-field { flex: 1; }
+
+  .player-turn-banner {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .player-turn-arrow { color: var(--accent); font-size: 16px; }
+  .player-turn-name { font-weight: 600; font-size: 15px; }
+  .player-turn-hint { font-size: 12px; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<!-- ===================== SCREEN: HOME ===================== -->
+<div id="screen-home" class="screen active flex-col gap24" style="justify-content: center; align-items: center; text-align: center;">
+  <div>
+    <div class="game-logo">INSIDER</div>
+    <p class="mt8" style="font-size:13px; letter-spacing:2px; text-transform:uppercase; color:var(--muted);">Social Deduction · Yes/No Questions</p>
+  </div>
+  <div class="card w100" style="text-align:left;">
+    <h3>How it works</h3>
+    <div class="flex flex-col gap12 mt12">
+      <div class="flex gap12">
+        <span style="font-size:20px">🎭</span>
+        <p style="font-size:14px"><strong style="color:var(--text)">Roles assigned secretly</strong> — one Master, one Insider, rest are Commons.</p>
+      </div>
+      <div class="flex gap12">
+        <span style="font-size:20px">❓</span>
+        <p style="font-size:14px"><strong style="color:var(--text)">Guess the word</strong> by asking the Master yes/no questions. 5 minutes on the clock.</p>
+      </div>
+      <div class="flex gap12">
+        <span style="font-size:20px">🕵️</span>
+        <p style="font-size:14px"><strong style="color:var(--text)">Find the Insider</strong> — who knows the word and secretly guides you?</p>
+      </div>
+    </div>
+  </div>
+  <button class="btn btn-primary" onclick="goTo('screen-setup')">Start New Game →</button>
+</div>
+
+<!-- ===================== SCREEN: SETUP ===================== -->
+<div id="screen-setup" class="screen flex-col gap20">
+  <div class="screen-header">
+    <button class="back-btn" onclick="goTo('screen-home')">←</button>
+    <h2>Setup</h2>
+  </div>
+
+  <div>
+    <h3>Players <span id="player-count-label" style="color:var(--text); margin-left:6px;">0</span></h3>
+    <div class="flex gap8 mt12">
+      <input class="input-field flex-1" id="player-name-input" placeholder="Enter player name…" maxlength="20" onkeydown="if(event.key==='Enter')addPlayer()">
+      <button class="btn btn-secondary btn-sm" onclick="addPlayer()">Add</button>
+    </div>
+    <div id="player-list" class="player-list mt12"></div>
+    <p id="player-error" style="color:var(--accent2); font-size:13px; margin-top:8px; display:none;"></p>
+  </div>
+
+  <div class="divider"></div>
+
+  <div>
+    <h3>Secret Word</h3>
+    <p class="mt4" style="font-size:13px;">Enter a word or pick a random one.</p>
+    <div class="word-input-wrap mt12">
+      <input class="input-field" id="secret-word-input" placeholder="e.g. Elephant, Pizza, Moon…" maxlength="30">
+      <button class="random-btn" onclick="pickRandomWord()">Random</button>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div>
+    <h3>Timer Duration</h3>
+    <select class="select-field mt12" id="timer-select">
+      <option value="180">3 minutes (Easy)</option>
+      <option value="300" selected>5 minutes (Standard)</option>
+      <option value="420">7 minutes (Relaxed)</option>
+    </select>
+  </div>
+
+  <button class="btn btn-primary mt8" id="start-game-btn" onclick="startGame()">Assign Roles →</button>
+</div>
+
+<!-- ===================== SCREEN: ROLE REVEAL QUEUE ===================== -->
+<div id="screen-role-reveal" class="screen flex-col">
+  <div class="pass-screen-inner">
+    <div>
+      <h3 class="center">Pass to</h3>
+      <div class="pass-name" id="role-pass-name">—</div>
+    </div>
+    <p id="role-pass-sub" style="font-size:14px; text-align:center;">Look at your role privately, then pass to the next player.</p>
+    <button class="btn btn-primary" id="role-reveal-btn" onclick="revealCurrentRole()">👁️ Show My Role</button>
+    <p id="role-progress-text" style="font-size:13px; color:var(--muted);"></p>
+  </div>
+</div>
+
+<!-- ===================== SCREEN: SINGLE ROLE OVERLAY ===================== -->
+<div id="reveal-overlay" class="reveal-overlay hidden">
+  <div id="role-card-display" class="role-card w100" style="max-width:340px;">
+    <span class="role-icon" id="role-icon-display">🎭</span>
+    <div class="role-name" id="role-name-display">MASTER</div>
+    <p class="role-desc" id="role-desc-display"></p>
+  </div>
+  <div id="word-reveal-section" style="width:100%;max-width:340px;display:none;">
+    <div class="secret-word-box mt16">
+      <h3>Secret Word</h3>
+      <div class="secret-word mt8" id="role-word-display"></div>
+    </div>
+  </div>
+  <button class="btn btn-secondary w100" style="max-width:340px;" onclick="closeRoleOverlay()">Got it — pass the phone</button>
+</div>
+
+<!-- ===================== SCREEN: GAME Q&A ===================== -->
+<div id="screen-game" class="screen flex-col gap16">
+  <div class="flex" style="justify-content:space-between;align-items:center;">
+    <div>
+      <div class="phase-badge"><div class="phase-dot"></div>Finding the Word</div>
+      <h2 class="mt8">Q&amp;A Phase</h2>
+    </div>
+    <div id="qa-timer-wrap" class="timer-ring-wrap" style="width:80px;height:80px;">
+      <svg width="80" height="80" viewBox="0 0 80 80">
+        <circle cx="40" cy="40" r="34" fill="none" stroke="var(--surface3)" stroke-width="6"/>
+        <circle id="qa-timer-ring" cx="40" cy="40" r="34" fill="none" stroke="var(--accent)" stroke-width="6"
+          stroke-dasharray="213.6" stroke-dashoffset="0" stroke-linecap="round" style="transition:stroke-dashoffset 1s linear, stroke 0.5s;"/>
+      </svg>
+      <div class="timer-text" id="qa-timer-text-wrap">
+        <div class="timer-digits" id="qa-timer-display">5:00</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="player-turn-banner">
+    <span class="player-turn-arrow">▶</span>
+    <div>
+      <div class="player-turn-hint">Master</div>
+      <div class="player-turn-name" id="master-name-display">—</div>
+    </div>
+    <div style="margin-left:auto;">
+      <span class="tag tag-warn">Answers Only</span>
+    </div>
+  </div>
+
+  <!-- Master answer UI (shown to master to log answers) -->
+  <div id="answer-section">
+    <h3>Log a Question & Answer</h3>
+    <div class="flex gap8 mt8" style="align-items:center;">
+      <select class="select-field" id="asker-select" style="max-width:130px;"></select>
+      <input class="input-field flex-1" id="q-input" placeholder="What did they ask?" maxlength="80">
+    </div>
+    <div class="answer-grid mt8">
+      <button class="answer-btn yes" onclick="logAnswer('YES')">YES</button>
+      <button class="answer-btn no"  onclick="logAnswer('NO')">NO</button>
+      <button class="answer-btn dontknow" onclick="logAnswer('IDK')">I Don't Know</button>
+    </div>
+  </div>
+
+  <!-- Q Log -->
+  <div>
+    <div class="flex" style="justify-content:space-between;align-items:center;">
+      <h3>Question Log <span id="q-count" style="color:var(--text);margin-left:4px;">0</span></h3>
+      <button class="btn btn-secondary btn-sm" onclick="clearLog()" style="font-size:11px;padding:5px 10px;">Clear</button>
+    </div>
+    <div class="q-log mt8" id="q-log"></div>
+  </div>
+
+  <div class="divider"></div>
+  <div class="flex gap8" style="flex-wrap:wrap;">
+    <button class="btn btn-primary flex-1" onclick="wordGuessed()" style="font-size:14px;">✓ Word Guessed!</button>
+    <button class="btn btn-danger flex-1" onclick="timeUp()" style="font-size:14px;">✗ Time's Up / Give Up</button>
+  </div>
+</div>
+
+<!-- ===================== SCREEN: DISCUSSION ===================== -->
+<div id="screen-discussion" class="screen flex-col gap16">
+  <div class="flex" style="justify-content:space-between;align-items:center;">
+    <div>
+      <div class="phase-badge"><div class="phase-dot red"></div>Finding the Insider</div>
+      <h2 class="mt8">Discussion</h2>
+    </div>
+    <div id="disc-timer-wrap" class="timer-ring-wrap" style="width:80px;height:80px;">
+      <svg width="80" height="80" viewBox="0 0 80 80">
+        <circle cx="40" cy="40" r="34" fill="none" stroke="var(--surface3)" stroke-width="6"/>
+        <circle id="disc-timer-ring" cx="40" cy="40" r="34" fill="none" stroke="var(--accent2)" stroke-width="6"
+          stroke-dasharray="213.6" stroke-dashoffset="0" stroke-linecap="round" style="transition:stroke-dashoffset 1s linear, stroke 0.5s;"/>
+      </svg>
+      <div class="timer-text" id="disc-timer-text-wrap">
+        <div class="timer-digits" id="disc-timer-display">5:00</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="info-box">
+    <p>The word was guessed! Now discuss — who was secretly guiding you? Everyone votes (including the Master).</p>
+  </div>
+
+  <div>
+    <h3>Who is the Insider?</h3>
+    <div class="vote-list mt12" id="vote-list"></div>
+  </div>
+
+  <button class="btn btn-primary mt8" id="submit-vote-btn" onclick="submitVote()" disabled>Submit Vote →</button>
+  <button class="btn btn-secondary" onclick="skipToVote()" style="font-size:13px; opacity:0.7;">Skip discussion, go straight to vote</button>
+</div>
+
+<!-- ===================== SCREEN: RESULT ===================== -->
+<div id="screen-result" class="screen flex-col gap20">
+  <h2 style="text-align:center;">Result</h2>
+  <div id="result-banner" class="result-banner">
+    <span class="result-emoji" id="result-emoji">🎉</span>
+    <div class="result-title" id="result-title">Commons Win!</div>
+    <p id="result-desc" style="margin-top:8px; opacity:0.7;"></p>
+  </div>
+
+  <div class="card">
+    <h3>Roles Revealed</h3>
+    <div id="roles-revealed" class="flex flex-col gap8 mt12"></div>
+  </div>
+
+  <div class="card">
+    <h3>Q&A Recap</h3>
+    <div class="q-log mt8" id="result-q-log" style="max-height:180px;"></div>
+    <p id="result-q-log-empty" style="font-size:13px; color:var(--muted); margin-top:8px; display:none;">No questions were logged.</p>
+  </div>
+
+  <button class="btn btn-primary" onclick="playAgain()">Play Again →</button>
+  <button class="btn btn-secondary" onclick="goTo('screen-home')">Home</button>
+</div>
+
+<!-- ===================== SCREEN: EVERYONE LOSES ===================== -->
+<div id="screen-lose" class="screen flex-col gap20" style="justify-content:center; align-items:center; text-align:center;">
+  <div class="result-banner lose w100">
+    <span class="result-emoji">💀</span>
+    <div class="result-title">Everyone Loses</div>
+    <p style="margin-top:8px; opacity:0.7;">The word was not guessed in time.</p>
+  </div>
+  <div class="card w100" style="text-align:left;">
+    <h3>The Word Was</h3>
+    <div class="secret-word mt8" id="lose-word-reveal" style="font-size:36px;"></div>
+    <p class="mt8" style="font-size:13px;">And <span id="lose-insider-name" style="color:var(--accent2);font-weight:600;"></span> was the Insider.</p>
+  </div>
+  <button class="btn btn-primary w100" onclick="playAgain()">Play Again →</button>
+  <button class="btn btn-secondary w100" onclick="goTo('screen-home')">Home</button>
+</div>
+
+<script>
+// ===================== STATE =====================
+const WORDS = [
+  'Elephant','Pizza','Astronaut','Volcano','Submarine','Cactus','Lighthouse',
+  'Monopoly','Spaghetti','Dinosaur','Telescope','Parachute','Igloo','Saxophone',
+  'Waterfall','Kangaroo','Microscope','Accordion','Avalanche','Tornado',
+  'Porcupine','Escalator','Cathedral','Speedboat','Labyrinth','Champagne',
+  'Snowflake','Catapult','Hourglass','Compass','Pyramid','Jellyfish','Umbrella',
+  'Bicycle','Camera','Robot','Library','Firework','Hammock','Mirror',
+  'Rollercoaster','Aurora','Skyscraper','Quicksand','Coconut','Megaphone',
+  'Stalagmite','Windmill','Periscope','Treehouse'
+];
+
+let state = {
+  players: [],       // [{name}]
+  roles: {},         // {name: 'master'|'insider'|'common'}
+  secretWord: '',
+  timerDuration: 300,
+  qaTimeLeft: 300,
+  qaTimeElapsed: 0,
+  discTimeLeft: 0,
+  qaLog: [],         // [{asker, question, answer}]
+  votes: {},         // {playerName: candidateName}
+  currentRoleReveal: 0,
+  qaTimerInterval: null,
+  discTimerInterval: null,
+};
+
+// ===================== NAVIGATION =====================
+function goTo(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+// ===================== SETUP =====================
+function addPlayer() {
+  const inp = document.getElementById('player-name-input');
+  const err = document.getElementById('player-error');
+  const name = inp.value.trim();
+  if (!name) return;
+  if (state.players.find(p => p.name.toLowerCase() === name.toLowerCase())) {
+    showError(err, 'Name already added.'); return;
+  }
+  if (state.players.length >= 8) {
+    showError(err, 'Maximum 8 players.'); return;
+  }
+  err.style.display = 'none';
+  state.players.push({name});
+  inp.value = '';
+  inp.focus();
+  renderPlayerList();
+}
+
+function removePlayer(name) {
+  state.players = state.players.filter(p => p.name !== name);
+  renderPlayerList();
+}
+
+function renderPlayerList() {
+  const list = document.getElementById('player-list');
+  const label = document.getElementById('player-count-label');
+  label.textContent = state.players.length;
+  list.innerHTML = state.players.map(p => `
+    <div class="player-chip">
+      <span>${escHtml(p.name)}</span>
+      <button class="remove-btn" onclick="removePlayer('${escHtml(p.name)}')">×</button>
+    </div>
+  `).join('');
+}
+
+function showError(el, msg) {
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 2500);
+}
+
+function pickRandomWord() {
+  const w = WORDS[Math.floor(Math.random() * WORDS.length)];
+  document.getElementById('secret-word-input').value = w;
+}
+
+function startGame() {
+  const err = document.getElementById('player-error');
+  if (state.players.length < 4) {
+    showError(err, 'Need at least 4 players!'); return;
+  }
+  const word = document.getElementById('secret-word-input').value.trim();
+  if (!word) {
+    showError(err, 'Please enter a secret word.'); return;
+  }
+  state.secretWord = word;
+  state.timerDuration = parseInt(document.getElementById('timer-select').value);
+  assignRoles();
+  state.currentRoleReveal = 0;
+  state.qaLog = [];
+  state.votes = {};
+  goTo('screen-role-reveal');
+  updateRoleRevealScreen();
+}
+
+function assignRoles() {
+  const shuffled = [...state.players].sort(() => Math.random() - 0.5);
+  state.roles = {};
+  shuffled.forEach((p, i) => {
+    if (i === 0) state.roles[p.name] = 'master';
+    else if (i === 1) state.roles[p.name] = 'insider';
+    else state.roles[p.name] = 'common';
+  });
+}
+
+// ===================== ROLE REVEAL =====================
+function updateRoleRevealScreen() {
+  const i = state.currentRoleReveal;
+  const player = state.players[i];
+  document.getElementById('role-pass-name').textContent = player.name;
+  document.getElementById('role-progress-text').textContent =
+    `Player ${i + 1} of ${state.players.length}`;
+  document.getElementById('role-reveal-btn').textContent = '👁️ Show My Role';
+}
+
+function revealCurrentRole() {
+  const player = state.players[state.currentRoleReveal];
+  const role = state.roles[player.name];
+  showRoleOverlay(player.name, role);
+}
+
+function showRoleOverlay(name, role) {
+  const overlay = document.getElementById('reveal-overlay');
+  const card = document.getElementById('role-card-display');
+  const icon = document.getElementById('role-icon-display');
+  const rname = document.getElementById('role-name-display');
+  const rdesc = document.getElementById('role-desc-display');
+  const wordSec = document.getElementById('word-reveal-section');
+  const wordEl = document.getElementById('role-word-display');
+
+  card.className = 'role-card w100 ' + role;
+  if (role === 'master') {
+    icon.textContent = '👑';
+    rname.textContent = 'MASTER';
+    rdesc.textContent = 'You know the secret word. Answer everyone\'s questions with YES, NO, or I DON\'T KNOW. Don\'t reveal the word directly!';
+    wordSec.style.display = 'block';
+    wordEl.textContent = state.secretWord;
+  } else if (role === 'insider') {
+    icon.textContent = '🕵️';
+    rname.textContent = 'INSIDER';
+    rdesc.textContent = 'You secretly know the word. Help guide the group to the answer — but stay hidden! If you\'re caught, you lose.';
+    wordSec.style.display = 'block';
+    wordEl.textContent = state.secretWord;
+  } else {
+    icon.textContent = '👤';
+    rname.textContent = 'COMMON';
+    rdesc.textContent = 'You don\'t know the word. Ask yes/no questions to discover it. After — find the Insider who\'s been guiding you!';
+    wordSec.style.display = 'none';
+  }
+  overlay.classList.remove('hidden');
+}
+
+function closeRoleOverlay() {
+  document.getElementById('reveal-overlay').classList.add('hidden');
+  state.currentRoleReveal++;
+  if (state.currentRoleReveal >= state.players.length) {
+    startQAPhase();
+  } else {
+    updateRoleRevealScreen();
+  }
+}
+
+// ===================== Q&A PHASE =====================
+function startQAPhase() {
+  state.qaTimeLeft = state.timerDuration;
+  state.qaTimeElapsed = 0;
+  const masterName = Object.entries(state.roles).find(([,r]) => r === 'master')[0];
+  document.getElementById('master-name-display').textContent = masterName;
+
+  // Populate asker select (exclude master)
+  const sel = document.getElementById('asker-select');
+  sel.innerHTML = state.players
+    .filter(p => state.roles[p.name] !== 'master')
+    .map(p => `<option value="${escHtml(p.name)}">${escHtml(p.name)}</option>`)
+    .join('');
+
+  renderQLog();
+  goTo('screen-game');
+  startQATimer();
+}
+
+function startQATimer() {
+  clearInterval(state.qaTimerInterval);
+  updateQATimerDisplay();
+  state.qaTimerInterval = setInterval(() => {
+    state.qaTimeLeft--;
+    state.qaTimeElapsed++;
+    updateQATimerDisplay();
+    if (state.qaTimeLeft <= 0) {
+      clearInterval(state.qaTimerInterval);
+      timeUp();
+    }
+  }, 1000);
+}
+
+function updateQATimerDisplay() {
+  const el = document.getElementById('qa-timer-display');
+  const wrap = document.getElementById('qa-timer-text-wrap');
+  const ring = document.getElementById('qa-timer-ring');
+  const t = Math.max(0, state.qaTimeLeft);
+  const total = state.timerDuration;
+  const frac = t / total;
+  const circ = 213.6;
+  ring.style.strokeDashoffset = circ * (1 - frac);
+
+  if (frac < 0.25) {
+    ring.style.stroke = 'var(--accent2)';
+    wrap.classList.add('timer-warn');
+  } else if (frac < 0.5) {
+    ring.style.stroke = 'var(--master)';
+    wrap.classList.remove('timer-warn');
+  } else {
+    ring.style.stroke = 'var(--accent)';
+    wrap.classList.remove('timer-warn');
+  }
+  el.textContent = formatTime(t);
+}
+
+function logAnswer(ans) {
+  const q = document.getElementById('q-input').value.trim();
+  if (!q) { document.getElementById('q-input').focus(); return; }
+  const asker = document.getElementById('asker-select').value;
+  state.qaLog.push({ asker, question: q, answer: ans });
+  document.getElementById('q-input').value = '';
+  document.getElementById('q-input').focus();
+  renderQLog();
+}
+
+function clearLog() {
+  state.qaLog = [];
+  renderQLog();
+}
+
+function renderQLog() {
+  const log = document.getElementById('q-log');
+  const cnt = document.getElementById('q-count');
+  cnt.textContent = state.qaLog.length;
+  if (state.qaLog.length === 0) {
+    log.innerHTML = '<p style="font-size:13px;color:var(--muted);padding:8px 0;">No questions logged yet.</p>';
+    return;
+  }
+  log.innerHTML = state.qaLog.map(e => `
+    <div class="q-entry">
+      <span class="asker">${escHtml(e.asker)}</span>
+      <span class="q-text">${escHtml(e.question)}</span>
+      <span class="answer ${e.answer.toLowerCase()}">${e.answer}</span>
+    </div>
+  `).join('');
+  log.scrollTop = log.scrollHeight;
+}
+
+function wordGuessed() {
+  clearInterval(state.qaTimerInterval);
+  startDiscussionPhase();
+}
+
+function timeUp() {
+  clearInterval(state.qaTimerInterval);
+  document.getElementById('lose-word-reveal').textContent = state.secretWord;
+  const insider = Object.entries(state.roles).find(([,r]) => r === 'insider')[0];
+  document.getElementById('lose-insider-name').textContent = insider;
+  goTo('screen-lose');
+}
+
+// ===================== DISCUSSION PHASE =====================
+function startDiscussionPhase() {
+  state.discTimeLeft = Math.max(30, state.qaTimeElapsed);
+  state.votes = {};
+
+  const voteList = document.getElementById('vote-list');
+  voteList.innerHTML = state.players.map(p => `
+    <div class="vote-item" id="vote-${sanitizeId(p.name)}" onclick="selectVote('${escHtml(p.name)}')">
+      <div class="vote-dot"></div>
+      <span>${escHtml(p.name)}</span>
+      <span class="vote-count-badge" id="vc-${sanitizeId(p.name)}">0</span>
+    </div>
+  `).join('');
+
+  document.getElementById('submit-vote-btn').disabled = true;
+  goTo('screen-discussion');
+  startDiscTimer();
+}
+
+let selectedVote = null;
+function selectVote(name) {
+  selectedVote = name;
+  document.querySelectorAll('.vote-item').forEach(el => el.classList.remove('selected'));
+  document.getElementById('vote-' + sanitizeId(name)).classList.add('selected');
+  document.getElementById('submit-vote-btn').disabled = false;
+}
+
+function startDiscTimer() {
+  clearInterval(state.discTimerInterval);
+  updateDiscTimerDisplay();
+  state.discTimerInterval = setInterval(() => {
+    state.discTimeLeft--;
+    updateDiscTimerDisplay();
+    if (state.discTimeLeft <= 0) {
+      clearInterval(state.discTimerInterval);
+    }
+  }, 1000);
+}
+
+function updateDiscTimerDisplay() {
+  const el = document.getElementById('disc-timer-display');
+  const wrap = document.getElementById('disc-timer-text-wrap');
+  const ring = document.getElementById('disc-timer-ring');
+  const t = Math.max(0, state.discTimeLeft);
+  const total = Math.max(30, state.qaTimeElapsed);
+  const frac = t / total;
+  const circ = 213.6;
+  ring.style.strokeDashoffset = circ * (1 - frac);
+  if (frac < 0.25) wrap.classList.add('timer-warn');
+  else wrap.classList.remove('timer-warn');
+  el.textContent = formatTime(t);
+}
+
+function skipToVote() {
+  clearInterval(state.discTimerInterval);
+  state.discTimeLeft = 0;
+  updateDiscTimerDisplay();
+}
+
+function submitVote() {
+  if (!selectedVote) return;
+  clearInterval(state.discTimerInterval);
+  showResult(selectedVote);
+}
+
+// ===================== RESULT =====================
+function showResult(accusedName) {
+  const insider = Object.entries(state.roles).find(([,r]) => r === 'insider')[0];
+  const caught = accusedName === insider;
+
+  const banner = document.getElementById('result-banner');
+  const emoji = document.getElementById('result-emoji');
+  const title = document.getElementById('result-title');
+  const desc  = document.getElementById('result-desc');
+
+  if (caught) {
+    banner.className = 'result-banner win';
+    emoji.textContent = '🎉';
+    title.textContent = 'Commons Win!';
+    desc.textContent = `You caught the Insider! ${insider} was indeed the Insider.`;
+  } else {
+    banner.className = 'result-banner insider-win';
+    emoji.textContent = '🕵️';
+    title.textContent = 'Insider Wins!';
+    desc.textContent = `You voted for ${accusedName}, but the real Insider was ${insider}. Better luck next time!`;
+  }
+
+  // Roles revealed
+  const rolesEl = document.getElementById('roles-revealed');
+  rolesEl.innerHTML = state.players.map(p => {
+    const role = state.roles[p.name];
+    const tagClass = role === 'master' ? 'tag-warn' : role === 'insider' ? 'tag-danger' : 'tag-info';
+    const roleLabel = role.charAt(0).toUpperCase() + role.slice(1);
+    return `<div class="flex" style="justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);">
+      <span style="font-weight:500;">${escHtml(p.name)}</span>
+      <span class="tag ${tagClass}">${roleLabel}</span>
+    </div>`;
+  }).join('');
+
+  // Q log recap
+  const rlog = document.getElementById('result-q-log');
+  const rempty = document.getElementById('result-q-log-empty');
+  if (state.qaLog.length === 0) {
+    rlog.innerHTML = '';
+    rempty.style.display = 'block';
+  } else {
+    rempty.style.display = 'none';
+    rlog.innerHTML = state.qaLog.map(e => `
+      <div class="q-entry">
+        <span class="asker">${escHtml(e.asker)}</span>
+        <span class="q-text">${escHtml(e.question)}</span>
+        <span class="answer ${e.answer.toLowerCase()}">${e.answer}</span>
+      </div>
+    `).join('');
+  }
+
+  goTo('screen-result');
+}
+
+// ===================== PLAY AGAIN =====================
+function playAgain() {
+  clearInterval(state.qaTimerInterval);
+  clearInterval(state.discTimerInterval);
+  selectedVote = null;
+  state.players = [];
+  state.qaLog = [];
+  state.votes = {};
+  renderPlayerList();
+  document.getElementById('secret-word-input').value = '';
+  document.getElementById('player-error').style.display = 'none';
+  goTo('screen-setup');
+}
+
+// ===================== UTILS =====================
+function formatTime(s) {
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  return `${m}:${sec.toString().padStart(2,'0')}`;
+}
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function sanitizeId(s) {
+  return s.replace(/[^a-zA-Z0-9]/g,'_');
+}
+</script>
+</body>
+</html>
